@@ -1,7 +1,9 @@
 package service
 
 import (
+	"errors"
 	"go-clean-aws/features/users"
+	"go-clean-aws/utils/helper"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -13,7 +15,24 @@ type userUseCase struct {
 
 // Create implements users.UserService
 func (uuc *userUseCase) Create(input users.Core) error {
-	panic("unimplemented")
+	err := uuc.validate.Struct(input)
+	if err != nil {
+		return errors.New("validate: " + err.Error())
+	}
+
+	// hash password
+	hashed, err := helper.HashPassword(input.Password)
+	if err != nil {
+		return err
+	}
+	input.Password = string(hashed)
+
+	err = uuc.qry.Insert(input)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Login implements users.UserService

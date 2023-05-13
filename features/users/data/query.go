@@ -12,7 +12,15 @@ type userQuery struct {
 
 // Insert implements users.UserData
 func (uq *userQuery) Insert(input users.Core) error {
-	panic("unimplemented")
+	dataModel := CoreToUserModel(input)
+	txInsert := uq.db.Create(&dataModel)
+	if txInsert.Error != nil {
+		return txInsert.Error
+	}
+	if txInsert.RowsAffected == 0 {
+		return txInsert.Error
+	}
+	return nil
 }
 
 // Login implements users.UserData
