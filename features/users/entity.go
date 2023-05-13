@@ -16,7 +16,7 @@ type Core struct {
 }
 
 type UserService interface {
-	Login(email string, password string) (Core, string, error)
+	Login(input Core) (Core, string, error)
 	Create(input Core) error
 }
 

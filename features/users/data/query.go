@@ -25,7 +25,12 @@ func (uq *userQuery) Insert(input users.Core) error {
 
 // Login implements users.UserData
 func (uq *userQuery) Login(email string) (users.Core, error) {
-	panic("unimplemented")
+	dataModel := User{}
+	txSelect := uq.db.Where("email = ?", email).First(&dataModel)
+	if txSelect.Error != nil {
+		return users.Core{}, txSelect.Error
+	}
+	return (UserModelToCore(dataModel)), nil
 }
 
 func New(db *gorm.DB) users.UserData {

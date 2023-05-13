@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"go-clean-aws/features/users"
+	"go-clean-aws/middlewares"
 	"go-clean-aws/utils/helper"
 
 	"github.com/go-playground/validator/v10"
@@ -21,7 +22,7 @@ func (uuc *userUseCase) Create(input users.Core) error {
 	}
 
 	// hash password
-	hashed, err := helper.HashPassword(input.Password)
+	hashed, err := helper.PassBcrypt(input.Password)
 	if err != nil {
 		return err
 	}
@@ -36,8 +37,29 @@ func (uuc *userUseCase) Create(input users.Core) error {
 }
 
 // Login implements users.UserService
-func (uuc *userUseCase) Login(email string, password string) (users.Core, string, error) {
-	panic("unimplemented")
+func (uuc *userUseCase) Login(input users.Core) (users.Core, string, error) {
+	err := uuc.validate.StructExcept(input, "Name")
+	if err != nil {
+		return users.Core{}, "", errors.New("validate: " + err.Error())
+	}
+
+	// find account
+	core, err := uuc.qry.Login(input.Email)
+	if err != nil {
+		return users.Core{}, "", err
+	}
+
+	err = helper.PassCompare(core.Password, input.Password)
+	if err != nil {
+		return users.Core{}, "", err
+	}
+
+	token, err := middlewares.CreateToken(core.ID)
+	if err != nil {
+		return users.Core{}, "", err
+	}
+
+	return core, token, nil
 }
 
 func New(ud users.UserData) users.UserService {

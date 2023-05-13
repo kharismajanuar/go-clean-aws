@@ -13,20 +13,16 @@ type userHandler struct {
 
 // Login implements users.UserDelivery
 func (uh *userHandler) Login(c echo.Context) error {
-	panic("unimplemented")
-}
-
-// Register implements users.UserDelivery
-func (uh *userHandler) Register(c echo.Context) error {
-	input := RegisterRequest{}
-	errBind := c.Bind(&input)
-	if errBind != nil {
+	input := LoginRequest{}
+	err := c.Bind(&input)
+	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]any{
 			"status":  "failed",
 			"message": "error bind data",
 		})
 	}
-	err := uh.srv.Create(registerToCore(input))
+
+	core, token, err := uh.srv.Login(loginToCore(input))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]any{
 			"status":  "failed",
@@ -34,6 +30,32 @@ func (uh *userHandler) Register(c echo.Context) error {
 		})
 	}
 
+	return c.JSON(http.StatusOK, map[string]any{
+		"status":  "success",
+		"message": "success login",
+		"id":      core.ID,
+		"name":    core.Name,
+		"token":   token,
+	})
+}
+
+// Register implements users.UserDelivery
+func (uh *userHandler) Register(c echo.Context) error {
+	input := RegisterRequest{}
+	err := c.Bind(&input)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]any{
+			"status":  "failed",
+			"message": "error bind data",
+		})
+	}
+	err = uh.srv.Create(registerToCore(input))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]any{
+			"status":  "failed",
+			"message": err.Error(),
+		})
+	}
 	return c.JSON(http.StatusCreated, map[string]any{
 		"status":  "success",
 		"message": "success register account",
